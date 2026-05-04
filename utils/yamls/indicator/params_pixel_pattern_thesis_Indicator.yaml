@@ -1,0 +1,140 @@
+### General Setting
+resumed_model: False
+save_on_round: [100, 200, 300, 400, 500]
+
+### Watermark setting
+ood_data_sample_lens: 800
+ood_data_batch_size: 64
+ood_data_source: CIFAR100
+
+### Benign Client Setting
+benign_lr: 0.05
+benign_momentum: 0.9
+benign_weight_decay: 0.0005
+benign_is_projection_grad: False
+benign_projection_norm: 3
+benign_retrain_no_times: 2
+
+### Malicious Client Setting
+poisoned_lr: 0.01
+poisoned_momentum: 0.9
+poisoned_weight_decay: 0.0005
+poisoned_is_projection_grad: False
+poisoned_projection_norm: 5
+poisoned_retrain_no_times: 10
+
+### Attack Timing
+poisoned_start_round: 250
+poisoned_end_round: 500
+poisoned_round_interval: 1
+
+### Attack Configuration (pixel pattern)
+poison_task_name: "pixel pattern"
+edge_case: False
+semantic: False
+pixel_pattern: True
+
+poison_images_test:
+  - 330
+  - 3934
+  - 12336
+  - 30560
+  - 30696
+
+poison_images:
+  - 568
+  - 33105
+  - 33615
+  - 33907
+  - 36848
+  - 40713
+  - 41706
+
+poisoned_original_class: 5
+poisoned_pattern_choose: 99
+blend_alpha: 0.3
+poison_label_swap: 2
+poisoned_len: 7
+poison_no_reuse: 10
+poison_train_batch_size: 32
+
+### Server Setting
+agg_method: FedProx
+defense_method: Indicator
+malicious_train_algo: Vanilla
+Fedprox_mu: 0
+watermarking_mu: 0.4
+model_type: ResNet18
+dataset: CIFAR10
+class_num: 10
+
+### Data Distribution - NON-IID (more extreme than paper)
+sample_dirichlet: True
+dirichlet_alpha: 0.2
+
+### Client Configuration - YOUR 10-CLIENT SETUP
+no_of_total_participants: 10
+no_of_participants_per_round: 10
+no_of_adversaries: 3
+
+### Training Setting
+start_round: 1
+end_round: 500
+train_batch_size: 32
+test_batch_size: 1000
+
+### Norm Clipping
+norm_clip: False
+fix_nc_bound: True
+nc_bound: 2
+
+### Aggregation
+eta: 0.5
+
+### Server Retraining
+global_retrain_no_times: 200
+
+### Server Optimization
+global_lr: 0.005
+global_momentum: 0.9
+global_weight_decay: 0.0005
+global_is_projection_grad: False
+global_projection_norm: 0.8
+
+### Watermarking (Detection) - CRITICAL FOR BACKDOOR INDICATOR
+global_watermarking_start_round: 240
+global_watermarking_end_round: 500
+global_watermarking_round_interval: 1
+
+global_milestones:
+  - 10
+  - 20
+  - 30
+  - 160
+  - 200
+
+### Benign Milestones
+benign_milestones:
+  - 2
+  - 4
+  - 6
+  - 8
+benign_lr_gamma: 0.1
+
+### Malicious Milestones
+malicious_milestones:
+  - 2
+  - 4
+  - 6
+  - 8
+malicious_lr_gamma: 0.3
+
+global_lr_gamma: 0.8
+
+### Detection Threshold - THE KEY PARAMETER
+VWM_detection_threshold: 95
+replace_original_bn: True
+
+### Logging
+show_local_test_log: False
+show_train_log: False

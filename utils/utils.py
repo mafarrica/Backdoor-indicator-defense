@@ -46,6 +46,16 @@ def add_trigger(data, poisoned_pattern_choose=None, blend_pattern=None, blend_al
                 new_data[c, 0+3*(model_id//2), 1+5*(model_id%2)] = 2.5
                 new_data[c, 0+3*(model_id//2), 2+5*(model_id%2)] = 2.5
                 new_data[c, 0+3*(model_id//2), 3+5*(model_id%2)] = 2.5
+    elif poisoned_pattern_choose == 99:
+        # 5x5 white square in bottom-right corner (from thesis repo)
+        # Normalized white pixel values: [2.64, 2.61, 2.63]
+        trigger_value = 2.64
+        for c in range(channels):
+            # 5x5 square: rows 27-31, cols 27-31 (for 32x32 image)
+            for i in range(27, 32):
+                for j in range(27, 32):
+                    if i < height and j < width:
+                        new_data[c, i, j] = trigger_value
     
     return torch.Tensor(new_data)
 
