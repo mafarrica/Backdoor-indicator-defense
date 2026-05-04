@@ -115,6 +115,10 @@ class WMFLDataloader(AbstractDataloader):
         return per_participant_list
     
     def _load_edge_case(self):
+        if not self.params.get('edge_case', False):
+            # Return empty lists if edge_case is disabled
+            return [], []
+        
         with open('./data/edge-case/southwest_images_new_train.pkl', 'rb') as train_f:
             saved_southwest_dataset_train = pickle.load(train_f)
         with open('./data/edge-case/southwest_images_new_test.pkl', 'rb') as test_f:
