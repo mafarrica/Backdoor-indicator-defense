@@ -1,0 +1,114 @@
+### General Settings
+resumed_model: False
+save_on_round: [30]
+exp_name: "Multikrum_Logging_PixelPattern_30rounds"
+
+### Watermark Setting (not used by Multikrum, but kept for API consistency)
+noise_rate: 0.5
+noise_pattern: 1
+noise_label_fixed: True
+ood_data_source: CIFAR100 
+ood_data_sample_lens: 800
+ood_data_batch_size: 64
+
+### Benign Client Setting
+# Optimizer Setting
+benign_lr: 0.05
+benign_momentum: 0.9
+benign_weight_decay: 0.0005
+
+# Training Process Setting
+benign_is_projection_grad: False
+benign_projection_norm: 3
+benign_retrain_no_times: 2
+
+### Malicious Client Setting
+# Optimizer Setting
+poisoned_lr: 0.01  # KEY: Lower learning rate defeats Multikrum
+poisoned_momentum: 0.9
+poisoned_weight_decay: 0.0005
+
+# Training Process Setting
+poisoned_is_projection_grad: False
+poisoned_projection_norm: 5
+poisoned_retrain_no_times: 10
+poisoned_start_round: 20   # Start backdoor at round 20
+poisoned_end_round: 30     # End at round 30
+poisoned_round_interval: 1
+
+# Poisoned Task Setting
+poison_task_name: "pixel pattern"
+adaptive_attack: False
+edge_case: False
+semantic: False
+pixel_pattern: True
+
+# Pixel Pattern Attack (5x5 white square at bottom-right)
+poisoned_original_class: 5    # Source: dog
+poisoned_pattern_choose: 99   # Custom pattern
+blend_alpha: 0.3              # Not used for pixel pattern, kept for API
+poison_label_swap: 2          # Target: bird
+poisoned_len: 7               # Poison 7 samples per batch of 32
+poison_no_reuse: 10
+poison_train_batch_size: 64
+
+# Placeholder lists (not used for pixel pattern)
+poison_images_test: []
+poison_images: []
+
+### Server Setting
+agg_method: FedProx
+defense_method: MultikrumLogged  # NEW: Logging-enabled version
+malicious_train_algo: Vanilla
+Fedprox_mu: 0
+
+model_type: ResNet18
+dataset: CIFAR10  # Training on CIFAR-10
+class_num: 10
+
+# Non-IID Data Distribution (Dirichlet)
+sample_dirichlet: True
+dirichlet_alpha: 0.2  # Very heterogeneous (0.2 is more skewed than 0.9)
+
+# Global Dataset Setting
+global_dataset_size: 200
+global_no_reuse: 1
+global_data_batch_size: 200
+global_data_train_batch_size: 200
+global_class_num: 20
+
+# Server Training Setting
+start_round: 1
+end_round: 31  # 30 rounds total
+train_batch_size: 64
+test_batch_size: 1000
+
+# KEY: 10 clients total, 3 malicious
+no_of_total_participants: 10
+no_of_participants_per_round: 10  # All clients participate each round
+no_of_adversaries: 3
+
+# Norm Clipping Setting
+norm_clip: True
+norm_bound: 10000
+
+# Aggregation Setting
+eta: 0.5
+
+# Learning Rate Schedules
+malicious_milestones:
+  - 10
+  - 20
+malicious_lr_gamma: 0.3
+
+benign_milestones:
+  - 10
+  - 20
+benign_lr_gamma: 0.1
+
+malicious_neurotoxin_ratio: 1
+malicious_aggregate_all_layer: 1
+
+### Logging Setting
+show_local_test_log: False
+show_train_log: False

@@ -18,6 +18,7 @@ from participants.servers.DeepsightServer import DeepsightServer
 from participants.servers.FoolsgoldServer import FoolsgoldServer
 from participants.servers.RflbatServer import RflbatServer
 from participants.servers.MultikrumServer import MultikrumServer
+from participants.servers.MultikrumServerWithLogging import MultikrumServerWithLogging
 
 from participants.clients.FedProxBenignClient import FedProxBenignClient
 from participants.clients.MaliciousClient import MaliciousClient
@@ -26,6 +27,15 @@ from participants.clients.ChameleonMaliciousClient import ChameleonMaliciousClie
 from dataloader.WMFLDataloader import WMFLDataloader
 from utils.utils import save_model
 from utils.utils import plot_poisoned_acc
+
+# Optional: Try to import Logger from thesis repo for logging experiments
+logger_obj = None
+try:
+    import sys
+    sys.path.insert(0, os.path.expanduser("~/uni/thesis"))
+    from logger import Logger
+except ImportError:
+    Logger = None
 
 logger = logging.getLogger("logger")
 
@@ -81,6 +91,18 @@ if __name__ == "__main__":
         server = MultikrumServer(params=params_loaded, current_time=current_time, train_dataset=dataloader.train_dataset, 
                             blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
                             edge_case_test=dataloader.edge_poison_test)
+    elif dataloader.params["defense_method"].lower()=="multikrumlogged":
+        # Instantiate logger if available
+        if Logger:
+            exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
+            logger_obj = Logger(
+                base_dir=os.path.expanduser("~/uni/thesis/experiments"),
+                experiment_name=exp_name
+            )
+        server = MultikrumServerWithLogging(params=params_loaded, current_time=current_time, 
+                                            train_dataset=dataloader.train_dataset, 
+                                            blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                            edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
 
     if server.params["agg_method"]=="FedProx":
         benign_client = FedProxBenignClient(params=params_loaded, train_dataset=dataloader.train_dataset, 
