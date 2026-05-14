@@ -78,8 +78,8 @@ global_data_train_batch_size: 200
 global_class_num: 20
 
 # Server Training Setting
-start_round: 1
-end_round: 31  # 30 rounds total
+start_round: 0
+end_round: 30  # 30 rounds total
 train_batch_size: 64
 test_batch_size: 1000
 
