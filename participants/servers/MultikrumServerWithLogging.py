@@ -87,16 +87,15 @@ class MultikrumServerWithLogging(AbstractServer):
             import sys
             
             # Thesis repo is sibling folder relative to this repo
-            # Navigate up: participants/servers/MultikrumServerWithLogging.py -> repo root -> ../thesis/src
+            # Navigate up: participants/servers/MultikrumServerWithLogging.py -> repo root -> ../thesis
             repo_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             thesis_path = os.path.abspath(os.path.join(repo_root, "..", "thesis"))
-            src_path = os.path.join(thesis_path, "src")
             
-            # Add src to path if not already there
-            if src_path not in sys.path:
-                sys.path.insert(0, src_path)
+            # Add thesis to path if not already there
+            if thesis_path not in sys.path:
+                sys.path.insert(0, thesis_path)
             
-            from schema import (
+            from src.schema import (
                 ExperimentConfig, DataDistribution, LearningRates, AttackConfig
             )
             

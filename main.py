@@ -32,12 +32,11 @@ from utils.utils import plot_poisoned_acc
 logger_obj = None
 try:
     import sys
-    # Thesis repo is sibling folder: ../thesis/src relative to this repo
+    # Thesis repo is sibling folder: ../thesis relative to this repo
     thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
-    src_path = os.path.join(thesis_path, "src")
-    sys.path.insert(0, src_path)
-    from logger import Logger
-except ImportError:
+    sys.path.insert(0, thesis_path)
+    from src.logger import Logger
+except ImportError as e:
     Logger = None
 
 logger = logging.getLogger("logger")
