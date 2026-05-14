@@ -83,6 +83,18 @@ class MultikrumServerWithLogging(AbstractServer):
             return
         
         try:
+            import os
+            import sys
+            
+            # Thesis repo is sibling folder relative to this repo
+            # Navigate up: participants/servers/MultikrumServerWithLogging.py -> repo root -> ../thesis
+            repo_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            thesis_path = os.path.abspath(os.path.join(repo_root, "..", "thesis"))
+            
+            # Add to path if not already there
+            if thesis_path not in sys.path:
+                sys.path.insert(0, thesis_path)
+            
             from schema import (
                 ExperimentConfig, DataDistribution, LearningRates, AttackConfig
             )
@@ -407,6 +419,57 @@ class MultikrumServerWithLogging(AbstractServer):
                 poisoned_batch[1][pos] = self.params["poison_label_swap"]
         
         return poisoned_batch, original_batch
+
+    def _global_test_sub(self, test_data, model=None, test_poisoned=False, poisoned_pattern_choose=None):
+        """
+        Test benign accuracy on global model
+        """
+        if model == None:
+            model = self.global_model
+    
+        model.eval()
+        total_loss = 0
+        correct = 0
+
+        dataset_size = len(test_data.dataset)
+        data_iterator = test_data
+
+        for batch_id, batch in enumerate(data_iterator):
+            if test_poisoned:
+                batch, original_batch = self._poisoned_batch_injection(batch, poisoned_pattern_choose, evaluation=True)
+            else:
+                batch = copy.deepcopy(batch)
+                original_batch = copy.deepcopy(batch)
+
+            data, targets = batch
+            data = data.cuda().detach().requires_grad_(False)
+            targets = targets.cuda().detach().requires_grad_(False)
+
+            _, original_targets = original_batch
+            original_targets = original_targets.cuda().detach().requires_grad_(False)
+
+            output = model(data)
+            total_loss += nn.functional.cross_entropy(output, targets, reduction='sum').item() 
+            pred = output.data.max(1)[1]
+
+            correct += pred.eq(targets.data.view_as(pred)).cpu().sum().item()
+
+        acc = 100.0 * (float(correct) / float(dataset_size))
+        total_l = total_loss / dataset_size
+        model.train()
+        return (total_l, acc)
+
+    def global_test(self, test_data, round, poisoned_pattern_choose=None):
+        """
+        Global test to show test acc/loss for different tasks
+        """
+        loss, acc = self._global_test_sub(test_data, test_poisoned=False)
+        logger.info(f"global model on round:{round} | benign acc:{acc}, benign loss:{loss}")
+
+        loss_p, acc_p = self._global_test_sub(test_data, test_poisoned=True, poisoned_pattern_choose=poisoned_pattern_choose)
+        logger.info(f"global model on round:{round} | poisoned acc:{acc_p}, poisoned loss:{loss_p}")
+
+        return (acc, acc_p)
 
     def pre_process(self, *args, **kwargs):
         return True

@@ -32,7 +32,9 @@ from utils.utils import plot_poisoned_acc
 logger_obj = None
 try:
     import sys
-    sys.path.insert(0, os.path.expanduser("~/uni/thesis"))
+    # Thesis repo is sibling folder: ../thesis relative to this repo
+    thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
+    sys.path.insert(0, thesis_path)
     from logger import Logger
 except ImportError:
     Logger = None
@@ -95,10 +97,15 @@ if __name__ == "__main__":
         # Instantiate logger if available
         if Logger:
             exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
+            
+            # Thesis repo is sibling folder: ../thesis relative to this repo
+            thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
+            
             logger_obj = Logger(
-                base_dir=os.path.expanduser("~/uni/thesis/experiments"),
+                base_dir=os.path.join(thesis_path, "experiments"),
                 experiment_name=exp_name
             )
+        
         server = MultikrumServerWithLogging(params=params_loaded, current_time=current_time, 
                                             train_dataset=dataloader.train_dataset, 
                                             blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
