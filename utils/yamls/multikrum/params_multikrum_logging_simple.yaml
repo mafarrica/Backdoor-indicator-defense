@@ -1,7 +1,7 @@
 ### General Settings
 resumed_model: False
 save_on_round: [30]
-exp_name: "Multikrum_Logging_PixelPattern_30rounds"
+exp_name: "exp00-Multikrum_Logging_Simple"
 
 ### Watermark Setting (not used by Multikrum, but kept for API consistency)
 noise_rate: 0.5
@@ -68,7 +68,7 @@ class_num: 10
 
 # Non-IID Data Distribution (Dirichlet)
 sample_dirichlet: True
-dirichlet_alpha: 0.2  # Very heterogeneous (0.2 is more skewed than 0.9)
+dirichlet_alpha: 0.9
 
 # Global Dataset Setting
 global_dataset_size: 200
@@ -86,7 +86,7 @@ test_batch_size: 1000
 # KEY: 10 clients total, 3 malicious
 no_of_total_participants: 10
 no_of_participants_per_round: 10  # All clients participate each round
-no_of_adversaries: 3
+no_of_adversaries: 1
 
 # Norm Clipping Setting
 norm_clip: True
