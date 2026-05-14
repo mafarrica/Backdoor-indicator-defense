@@ -51,6 +51,10 @@ class MultikrumServerWithLogging(AbstractServer):
         self.edge_case_test = edge_case_test
         self.logger_obj = logger_obj  # NEW: logging object
         
+        # Respect start_round from params file (parent class defaults to 1)
+        if not params.get("resumed_model"):
+            self.params["start_round"] = params.get("start_round", 0)
+        
         self._create_check_model()
         
         # Initialize logging (builds and logs config if logger available)
