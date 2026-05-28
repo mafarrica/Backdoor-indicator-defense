@@ -19,6 +19,7 @@ from participants.servers.FoolsgoldServer import FoolsgoldServer
 from participants.servers.RflbatServer import RflbatServer
 from participants.servers.MultikrumServer import MultikrumServer
 from participants.servers.MultikrumServerWithLogging import MultikrumServerWithLogging
+from participants.servers.NodefenseServerWithLogging import NodefenseServerWithLogging
 
 from participants.clients.FedProxBenignClient import FedProxBenignClient
 from participants.clients.MaliciousClient import MaliciousClient
@@ -110,6 +111,25 @@ if __name__ == "__main__":
                                             train_dataset=dataloader.train_dataset, 
                                             blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
                                             edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+
+    elif dataloader.params["defense_method"].lower()=="nodefenselogged":
+        # Instantiate logger if available
+        if Logger:
+            exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
+            
+            # Thesis repo is sibling folder: ../thesis relative to this repo
+            thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
+            
+            logger_obj = Logger(
+                base_dir=os.path.join(thesis_path, "experiments"),
+                experiment_name=exp_name
+            )
+        
+        server = NodefenseServerWithLogging(params=params_loaded, current_time=current_time, 
+                                            train_dataset=dataloader.train_dataset, 
+                                            blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                            edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+
 
     if server.params["agg_method"]=="FedProx":
         benign_client = FedProxBenignClient(params=params_loaded, train_dataset=dataloader.train_dataset, 
