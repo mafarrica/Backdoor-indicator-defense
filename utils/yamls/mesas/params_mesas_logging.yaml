@@ -1,0 +1,128 @@
+### General Settings
+resumed_model: False
+save_on_round: [30]
+exp_name: "exp07-Mesas_Live_Training_Attack"
+
+### Watermark Setting (not used, kept for API consistency)
+noise_rate: 0.5
+noise_pattern: 1
+noise_label_fixed: True
+ood_data_source: CIFAR100 
+ood_data_sample_lens: 800
+ood_data_batch_size: 64
+
+### Benign Client Setting
+# Optimizer Setting
+benign_lr: 0.05
+benign_momentum: 0.9
+benign_weight_decay: 0.0005
+
+# Training Process Setting
+benign_is_projection_grad: False
+benign_projection_norm: 3
+benign_retrain_no_times: 2
+
+### Malicious Client Setting
+# Optimizer Setting
+poisoned_lr: 0.05
+poisoned_momentum: 0.9
+poisoned_weight_decay: 0.0005
+
+# Training Process Setting
+poisoned_is_projection_grad: False
+poisoned_projection_norm: 5
+poisoned_retrain_no_times: 10
+poisoned_start_round: 15
+poisoned_end_round: 30
+poisoned_round_interval: 1
+
+# Attack Type Selection
+# Options: "backdoor", "sign_flip", "label_flip", "noise_injection"
+malicious_attack_type: "sign_flip"
+
+# --- Label Flipping settings (active only if malicious_attack_type is "label_flip")
+poisoned_original_class: 5
+poison_label_swap: 2
+
+# --- Sign Flipping settings (active only if malicious_attack_type is "sign_flip")
+sign_flip_scale: -1.0
+
+# --- Noise Injection settings (active only if malicious_attack_type is "noise_injection")
+noise_injection_std: 0.01
+
+# --- Poisoned Task Setting (active only if malicious_attack_type is "backdoor")
+poison_task_name: "pixel pattern"
+adaptive_attack: False
+edge_case: False
+semantic: False
+pixel_pattern: True
+poisoned_pattern_choose: 99
+blend_alpha: 0.3
+poisoned_len: 7
+poison_no_reuse: 10
+poison_train_batch_size: 64
+
+poison_images_test: []
+poison_images: []
+
+### Server / Defense Setting
+agg_method: FedProx
+defense_method: mesaslogged  # Use 'mesaslogged' for live training + logging, or 'mesas' for live training without logging
+malicious_train_algo: Vanilla
+Fedprox_mu: 0
+
+# --- MESAS specific settings ---
+mesas_outlier_method: "iqr"          # Outlier detection algorithm: 'iqr' or 'zscore'
+mesas_threshold_multiplier: 1.5      # Multiplier (IQR coefficient or Z-score threshold)
+mesas_target_metrics: ["mean_cosine"] # List of evaluated metrics (e.g., ["mean_cosine"], ["vector_length", "std_dev"], or ["all"])
+
+model_type: ResNet18
+dataset: CIFAR10  
+class_num: 10
+
+# Non-IID Data Distribution
+sample_dirichlet: True
+dirichlet_alpha: 0.9
+
+# Global Dataset Setting
+global_dataset_size: 200
+global_no_reuse: 1
+global_data_batch_size: 200
+global_data_train_batch_size: 200
+global_class_num: 20
+
+# Server Training Setting
+start_round: 0
+end_round: 30  
+train_batch_size: 64
+test_batch_size: 1000
+
+# 10 clients total, 1 malicious (Client 0)
+no_of_total_participants: 10
+no_of_participants_per_round: 10  
+no_of_adversaries: 1
+
+# Norm Clipping Setting
+norm_clip: True
+norm_bound: 10000
+
+# Aggregation Setting
+eta: 0.5
+
+# Learning Rate Schedules
+malicious_milestones:
+  - 10
+  - 20
+malicious_lr_gamma: 0.3
+
+benign_milestones:
+  - 10
+  - 20
+benign_lr_gamma: 0.1
+
+malicious_neurotoxin_ratio: 1
+malicious_aggregate_all_layer: 1
+
+### Logging Setting
+show_local_test_log: False
+show_train_log: False

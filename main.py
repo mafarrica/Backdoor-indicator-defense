@@ -18,8 +18,9 @@ from participants.servers.DeepsightServer import DeepsightServer
 from participants.servers.FoolsgoldServer import FoolsgoldServer
 from participants.servers.RflbatServer import RflbatServer
 from participants.servers.MultikrumServer import MultikrumServer
-from participants.servers.MultikrumServerWithLogging import MultikrumServerWithLogging
-from participants.servers.NodefenseServerWithLogging import NodefenseServerWithLogging
+from participants.servers.NodefenseServer_New import NodefenseServer_New
+from participants.servers.MultikrumServer_New import MultikrumServer_New
+from participants.servers.MesasServer import MesasServer
 
 from participants.clients.FedProxBenignClient import FedProxBenignClient
 from participants.clients.MaliciousClient import MaliciousClient
@@ -94,41 +95,34 @@ if __name__ == "__main__":
         server = MultikrumServer(params=params_loaded, current_time=current_time, train_dataset=dataloader.train_dataset, 
                             blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
                             edge_case_test=dataloader.edge_poison_test)
-    elif dataloader.params["defense_method"].lower()=="multikrumlogged":
-        # Instantiate logger if available
-        if Logger:
-            exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
-            
-            # Thesis repo is sibling folder: ../thesis relative to this repo
-            thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
-            
-            logger_obj = Logger(
-                base_dir=os.path.join(thesis_path, "experiments"),
-                experiment_name=exp_name
-            )
+    elif dataloader.params["defense_method"].lower() in ["nodefensenew", "nodefenselogged", "multikrumnew", "multikrumlogged", "mesas", "mesaslogged"]:
+        # Decide if logging is requested
+        logger_obj = None
+        defense_name = dataloader.params["defense_method"].lower()
+        if "logged" in defense_name:
+            if Logger:
+                exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
+                thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
+                logger_obj = Logger(
+                    base_dir=os.path.join(thesis_path, "experiments"),
+                    experiment_name=exp_name
+                )
         
-        server = MultikrumServerWithLogging(params=params_loaded, current_time=current_time, 
-                                            train_dataset=dataloader.train_dataset, 
-                                            blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
-                                            edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
-
-    elif dataloader.params["defense_method"].lower()=="nodefenselogged":
-        # Instantiate logger if available
-        if Logger:
-            exp_name = params_loaded.get("exp_name", f"experiment_{current_time}")
-            
-            # Thesis repo is sibling folder: ../thesis relative to this repo
-            thesis_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "thesis"))
-            
-            logger_obj = Logger(
-                base_dir=os.path.join(thesis_path, "experiments"),
-                experiment_name=exp_name
-            )
-        
-        server = NodefenseServerWithLogging(params=params_loaded, current_time=current_time, 
-                                            train_dataset=dataloader.train_dataset, 
-                                            blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
-                                            edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+        if "nodefense" in defense_name:
+            server = NodefenseServer_New(params=params_loaded, current_time=current_time, 
+                                         train_dataset=dataloader.train_dataset, 
+                                         blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                         edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+        elif "multikrum" in defense_name:
+            server = MultikrumServer_New(params=params_loaded, current_time=current_time, 
+                                         train_dataset=dataloader.train_dataset, 
+                                         blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                         edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+        elif "mesas" in defense_name:
+            server = MesasServer(params=params_loaded, current_time=current_time, 
+                                 train_dataset=dataloader.train_dataset, 
+                                 blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                 edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
 
 
     if server.params["agg_method"]=="FedProx":
