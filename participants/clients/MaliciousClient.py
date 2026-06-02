@@ -275,7 +275,12 @@ class MaliciousClient(AbstractClient):
                 if self.params["adaptive_attack"] and internal_round < self.params["adaptive_attack_round"]:
                     batch = copy.deepcopy(batch)
                 else:
-                    batch = self._poisoned_batch_injection(batch, poisoned_pattern_choose, evaluation=False, model_id=model_id)
+                    attack_type = self.params.get("malicious_attack_type", "backdoor")
+                    if attack_type in ["sign_flip", "noise_injection"]:
+                        # Sign flip and noise injection train on clean data before post-processing
+                        batch = copy.deepcopy(batch)
+                    else:
+                        batch = self._poisoned_batch_injection(batch, poisoned_pattern_choose, evaluation=False, model_id=model_id)
 
                 data, targets = batch
                 data = data.cuda().detach().requires_grad_(False)
@@ -299,18 +304,18 @@ class MaliciousClient(AbstractClient):
                 # if batch_id == len(data_iterator)-1 and internal_round == self.params["benign_retrain_no_times"]-1 and is_log_train:
                 if is_log_train:
 
-                    loss, acc = self._local_test_sub(test_data, test_poisoned=False, model=self.local_model)
-                    logger.info(f"round:{internal_round} | benign acc:{acc}, benign loss:{loss}")
+                     loss, acc = self._local_test_sub(test_data, test_poisoned=False, model=self.local_model)
+                     logger.info(f"round:{internal_round} | benign acc:{acc}, benign loss:{loss}")
 
-                    loss_p, acc_p = self._local_test_sub(test_data, test_poisoned=True, poisoned_pattern_choose=poisoned_pattern_choose, model=self.local_model)
-                    logger.info(f"round:{internal_round} | poisoned acc:{acc_p}, poisoned loss:{loss_p}")
-                    
-                    wm_data=copy.deepcopy(self.open_set)
-                    loss_w, acc_w, label_acc_w = self._local_watermarking_test_sub(wm_data, model=self.local_model)
-                    logger.info(f"watermarking acc:{acc_w}, watermarking loss:{loss_w}, target class wm acc:{label_acc_w}")
+                     loss_p, acc_p = self._local_test_sub(test_data, test_poisoned=True, poisoned_pattern_choose=poisoned_pattern_choose, model=self.local_model)
+                     logger.info(f"round:{internal_round} | poisoned acc:{acc_p}, poisoned loss:{loss_p}")
+                     
+                     wm_data=copy.deepcopy(self.open_set)
+                     loss_w, acc_w, label_acc_w = self._local_watermarking_test_sub(wm_data, model=self.local_model)
+                     logger.info(f"watermarking acc:{acc_w}, watermarking loss:{loss_w}, target class wm acc:{label_acc_w}")
 
-                    logger.info(f" ")
-                    
+                     logger.info(f" ")
+                     
             if self.params["adaptive_attack"] and \
                 internal_round==self.params["adaptive_attack_round"]-1:
                 self._optimizer(round, adaptive=False)
@@ -318,12 +323,40 @@ class MaliciousClient(AbstractClient):
             else:
                 self.scheduler.step()
 
+        # Post-training modification for sign_flip / noise_injection
+        attack_type = self.params.get("malicious_attack_type", "backdoor")
+        if attack_type == "sign_flip":
+            scale = self.params.get("sign_flip_scale", -1.0)
+            logger.info(f"Applying sign flip attack with scale {scale}")
+            for name, param in self.local_model.named_parameters():
+                if param.requires_grad:
+                    diff = param.data - target_params_variables[name]
+                    param.data.copy_(target_params_variables[name] + scale * diff)
+        elif attack_type == "noise_injection":
+            std = self.params.get("noise_injection_std", 0.01)
+            logger.info(f"Applying noise injection attack with std {std}")
+            for name, param in self.local_model.named_parameters():
+                if param.requires_grad:
+                    noise = torch.randn_like(param.data) * std
+                    param.data.add_(noise)
+
     def _poisoned_batch_injection(self, batch, poisoned_pattern_choose=None, evaluation=False, model_id=None):
         r"""
         replace the poisoned batch with the oirginal batch
         """
         poisoned_batch = copy.deepcopy(batch)
         original_batch = copy.deepcopy(batch)
+        
+        attack_type = self.params.get("malicious_attack_type", "backdoor")
+        if attack_type == "label_flip":
+            src = self.params.get("poisoned_original_class", 5)
+            target = self.params.get("poison_label_swap", 2)
+            # Find and flip the labels in the batch
+            for pos in range(len(poisoned_batch[0])):
+                if poisoned_batch[1][pos] == src:
+                    poisoned_batch[1][pos] = target
+            return poisoned_batch
+
         poisoned_len = self.params["poisoned_len"] if not evaluation else len(poisoned_batch[0])
         if self.params["semantic"]:
             poison_images_list = copy.deepcopy(self.params["poison_images"])
