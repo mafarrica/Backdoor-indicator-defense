@@ -43,6 +43,7 @@ class MesasServer(AbstractServer):
         # (Using safe defaults if not provided in YAML)
         self.outlier_method = self.params.get('mesas_outlier_method', 'iqr')  # 'iqr' or 'zscore'
         self.threshold_multiplier = self.params.get('mesas_threshold_multiplier', 1.5)
+        self.voting_threshold = self.params.get('mesas_voting_threshold', 1)
         
         # Support a list of target metrics, default to mean_cosine (robust baseline)
         self.target_metrics = self.params.get('mesas_target_metrics', ['mean_cosine'])
@@ -52,6 +53,7 @@ class MesasServer(AbstractServer):
         logger.info(f"MesasServer initialized:")
         logger.info(f"  Target Metrics: {self.target_metrics}")
         logger.info(f"  Outlier Method: {self.outlier_method} (multiplier={self.threshold_multiplier})")
+        logger.info(f"  Voting Threshold: {self.voting_threshold}")
 
         self._create_check_model()
         
@@ -128,7 +130,8 @@ class MesasServer(AbstractServer):
                     threshold=float(self.threshold_multiplier),
                     parameters={
                         "outlier_method": self.outlier_method,
-                        "target_metrics": self.target_metrics
+                        "target_metrics": self.target_metrics,
+                        "voting_threshold": self.voting_threshold
                     }
                 ),
                 attack_config=AttackConfig(
@@ -240,6 +243,8 @@ class MesasServer(AbstractServer):
         """
         Main round: broadcast model, collect updates, calculate MESAS metrics, filter outliers, aggregate.
         """
+        round_start_time = time.time()
+        
         ### Log info
         logger.info(f"Training on global round {round} begins")
             
@@ -380,13 +385,16 @@ class MesasServer(AbstractServer):
         all_metric_keys = ["vector_length", "std_dev", "mean_distance", "mean_cosine", "sign_change_ratio", "value_sign_change_ratio"]
         eval_metrics = all_metric_keys if "all" in self.target_metrics else self.target_metrics
 
-        malicious_set = set()
+        # Voting system: count how many times each client is flagged as an outlier
+        flag_counts = {cid: 0 for cid in selected_clients}
         for metric_name in eval_metrics:
             target_scores = {cid: m[metric_name] for cid, m in metrics.items()}
             outliers_for_metric = self._detect_outliers(target_scores, metric_name)
-            malicious_set.update(outliers_for_metric)
+            for cid in outliers_for_metric:
+                flag_counts[cid] += 1
 
-        malicious_clients = list(malicious_set)
+        # Drop clients flagged in at least voting_threshold metrics
+        malicious_clients = [cid for cid, count in flag_counts.items() if count >= self.voting_threshold]
         accepted_clients = [cid for cid in selected_clients if cid not in malicious_clients]
         rejected_clients = malicious_clients
 
@@ -431,7 +439,13 @@ class MesasServer(AbstractServer):
                     'false_positive_rate': false_positive_rate
                 }
             }
-            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta)
+
+            round_duration = time.time() - round_start_time
+            
+            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta, round_duration)
+
+        round_duration = time.time() - round_start_time
+        logger.info(f"Round {round} completed in {round_duration:.4f} seconds")
 
         return weight_accumulator, aggregated_model_id
 
