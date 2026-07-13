@@ -228,6 +228,7 @@ class MultikrumServer_New(AbstractServer):
         """
         Main round: broadcast model, collect updates, detect Byzantine, aggregate.
         """
+        round_start_time = time.time()
         
         ### Log info
         logger.info(f"Training on global round {round} begins")
@@ -359,7 +360,12 @@ class MultikrumServer_New(AbstractServer):
                     'false_positive_rate': false_positive_rate
                 }
             }
-            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta)
+            round_duration = time.time() - round_start_time
+            
+            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta, round_duration)
+
+        round_duration = time.time() - round_start_time
+        logger.info(f"Round {round} completed in {round_duration:.4f} seconds")
 
         return weight_accumulator, aggregated_model_id
 

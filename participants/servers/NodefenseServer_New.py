@@ -190,6 +190,7 @@ class NodefenseServer_New(AbstractServer):
         Server broadcasts the global model to all participants.
         Every participants train its our local model and upload the weight difference to the server.
         """
+        round_start_time = time.time()
         
         ### Log info
         logger.info(f"Training on global round {round} begins")
@@ -291,7 +292,12 @@ class NodefenseServer_New(AbstractServer):
                     'false_positive_rate': 0.0
                 }
             }
-            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta)
+            round_duration = time.time() - round_start_time
+
+            self.logger_obj.log_round_end(round, accepted_clients, rejected_clients, aggregation_meta, round_duration)
+
+        round_duration = time.time() - round_start_time
+        logger.info(f"Round {round} completed in {round_duration:.4f} seconds")
 
         return weight_accumulator, aggregated_model_id
 

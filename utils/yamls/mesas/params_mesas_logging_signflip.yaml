@@ -1,0 +1,112 @@
+### General Settings
+resumed_model: False
+save_on_round: [100]                  # Save the model at the final round
+exp_name: "exp14-MESAS_Logging_SignFlip_iid"
+
+### Watermark Setting (API placeholders)
+noise_rate: 0.5
+noise_pattern: 1
+noise_label_fixed: True
+ood_data_source: CIFAR100 
+ood_data_sample_lens: 800
+ood_data_batch_size: 64
+
+### Benign Client Setting
+benign_lr: 0.05
+benign_momentum: 0.9
+benign_weight_decay: 0.0005
+benign_is_projection_grad: False
+benign_projection_norm: 3
+benign_retrain_no_times: 2
+
+### Malicious Client Setting
+# Optimizer matches benign settings for naive attacker behavior
+poisoned_lr: 0.05
+poisoned_momentum: 0.9
+poisoned_weight_decay: 0.0005
+poisoned_is_projection_grad: False
+poisoned_projection_norm: 5
+poisoned_retrain_no_times: 2
+
+# Attack Round Scheduling (rounds 40 to 100)
+poisoned_start_round: 40
+poisoned_end_round: 101
+poisoned_round_interval: 1
+
+# --- Attack configuration ---
+malicious_attack_type: "sign_flip"
+sign_flip_scale: -1.0                 # Standard sign-flipping multiplier
+
+# Target labels / pixels (kept for interface consistency, ignored during sign-flipping)
+poison_label_swap: 2
+poisoned_original_class: 5
+poison_task_name: "pixel pattern"
+adaptive_attack: False
+edge_case: False
+semantic: False
+pixel_pattern: True
+poisoned_pattern_choose: 99
+blend_alpha: 0.3
+poisoned_len: 7
+poison_no_reuse: 10
+poison_train_batch_size: 64
+poison_images_test: []
+poison_images: []
+
+### Server / Defense Setting
+agg_method: FedProx
+defense_method: mesaslogged       # Enables MESAS with experiment logging
+malicious_train_algo: Vanilla
+Fedprox_mu: 0
+
+# --- MESAS specific settings ---
+mesas_outlier_method: "iqr"          # Outlier detection algorithm: 'iqr' or 'zscore'
+mesas_threshold_multiplier: 1.5      # threshold coeff
+mesas_target_metrics: ["all"]        # Metric(s) evaluated
+mesas_voting_threshold: 2           # Minimum number of metrics that must flag a client as malicious for it to be excluded
+
+model_type: ResNet18
+dataset: CIFAR10  
+class_num: 10
+
+# Non-IID Dirichlet distribution setup
+sample_dirichlet: True
+dirichlet_alpha: 1000
+
+# Global Dataset Setting
+global_dataset_size: 200
+global_no_reuse: 1
+global_data_batch_size: 200
+global_data_train_batch_size: 200
+global_class_num: 20
+
+# Server Training Setting
+start_round: 0
+end_round: 101                        # Total of 100 rounds
+train_batch_size: 64
+test_batch_size: 1000
+
+# Client Configuration (30 total clients, all participating each round, 3 malicious)
+no_of_total_participants: 30
+no_of_participants_per_round: 30
+no_of_adversaries: 3
+
+# Norm Clipping Setting
+norm_clip: True
+norm_bound: 10000
+
+# Aggregation Setting
+eta: 0.5
+
+# Learning Rate Schedules
+malicious_milestones: [30, 60, 90]
+malicious_lr_gamma: 0.3
+benign_milestones: [30, 60, 90]
+benign_lr_gamma: 0.1
+
+malicious_neurotoxin_ratio: 1
+malicious_aggregate_all_layer: 1
+
+### Logging Setting
+show_local_test_log: False
+show_train_log: False
