@@ -1,3 +1,4 @@
+import torch
 import models.resnet
 import models.vgg
 
@@ -30,8 +31,8 @@ class AbstractClient():
                 local_model = getattr(models.vgg, self.params["model_type"])(num_classes=100)
 
         
-        self.local_model = local_model.cuda()
-        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.local_model = local_model.to(self.device)
         return True
 
     def _optimizer(self):

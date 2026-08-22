@@ -21,6 +21,7 @@ from participants.servers.MultikrumServer import MultikrumServer
 from participants.servers.NodefenseServer_New import NodefenseServer_New
 from participants.servers.MultikrumServer_New import MultikrumServer_New
 from participants.servers.MesasServer import MesasServer
+from participants.servers.FLTrustServer_New import FLTrustServer_New
 
 from participants.clients.FedProxBenignClient import FedProxBenignClient
 from participants.clients.MaliciousClient import MaliciousClient
@@ -95,7 +96,11 @@ if __name__ == "__main__":
         server = MultikrumServer(params=params_loaded, current_time=current_time, train_dataset=dataloader.train_dataset, 
                             blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
                             edge_case_test=dataloader.edge_poison_test)
-    elif dataloader.params["defense_method"].lower() in ["nodefensenew", "nodefenselogged", "multikrumnew", "multikrumlogged", "mesas", "mesaslogged"]:
+    elif dataloader.params["defense_method"].lower() in [
+            "nodefensenew", "nodefenselogged",
+            "multikrumnew", "multikrumlogged",
+            "mesas", "mesaslogged",
+            "fltrustnew", "fltrustedlogged"]:
         # Decide if logging is requested
         logger_obj = None
         defense_name = dataloader.params["defense_method"].lower()
@@ -123,6 +128,11 @@ if __name__ == "__main__":
                                  train_dataset=dataloader.train_dataset, 
                                  blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
                                  edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
+        elif "fltrust" in defense_name:
+            server = FLTrustServer_New(params=params_loaded, current_time=current_time,
+                                       train_dataset=dataloader.train_dataset,
+                                       blend_pattern=blend_pattern, edge_case_train=dataloader.edge_poison_train,
+                                       edge_case_test=dataloader.edge_poison_test, logger_obj=logger_obj)
 
 
     if server.params["agg_method"]=="FedProx":

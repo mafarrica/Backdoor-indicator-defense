@@ -48,7 +48,7 @@ class FedProxBenignClient(AbstractClient):
             elif self.params["dataset"].upper() == "CIFAR100":
                 check_model = getattr(models.vgg, self.params["model_type"])(num_classes=100)
         
-        self.check_model = check_model.cuda()
+        self.check_model = check_model.to(self.device)
         return True
 
     def soft_cross_entropy(self, input, target):
@@ -105,7 +105,7 @@ class FedProxBenignClient(AbstractClient):
         size = 0
         for name, layer in model.named_parameters():
             size += layer.view(-1).shape[0]
-        sum_var = torch.cuda.FloatTensor(size).fill_(0)
+        sum_var = torch.FloatTensor(size).fill_(0).to(self.device)
         size = 0
         for name, layer in model.named_parameters():
             sum_var[size:size + layer.view(-1).shape[0]] = (
@@ -143,8 +143,8 @@ class FedProxBenignClient(AbstractClient):
                 batch = copy.deepcopy(batch) 
                 data, targets = batch
 
-                data = data.cuda().detach().requires_grad_(False)
-                targets = targets.cuda().detach().requires_grad_(False)
+                data = data.to(self.device).detach().requires_grad_(False)
+                targets = targets.to(self.device).detach().requires_grad_(False)
 
                 output = self.local_model(data)
                 class_loss = self.ceriterion(output, targets)
@@ -232,8 +232,8 @@ class FedProxBenignClient(AbstractClient):
         for batch_id, batch in enumerate(data_iterator):
 
             data, targets = batch
-            data = data.cuda().detach().requires_grad_(False)
-            targets = targets.cuda().detach().requires_grad_(False)
+            data = data.to(self.device).detach().requires_grad_(False)
+            targets = targets.to(self.device).detach().requires_grad_(False)
 
             output = model(data)
             total_loss += self.ceriterion(output, targets, reduction='sum').item() 
@@ -282,8 +282,8 @@ class FedProxBenignClient(AbstractClient):
             else:
                 poisoned_batch = copy.deepcopy(batch)
             data, targets = poisoned_batch
-            data = data.cuda().detach().requires_grad_(False)
-            targets = targets.cuda().detach().requires_grad_(False)
+            data = data.to(self.device).detach().requires_grad_(False)
+            targets = targets.to(self.device).detach().requires_grad_(False)
 
             output = model(data)
             total_loss += self.ceriterion(output, targets, reduction='sum').item() 

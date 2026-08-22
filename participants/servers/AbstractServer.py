@@ -59,8 +59,8 @@ class AbstractServer():
                 global_model = getattr(models.vgg, self.params["model_type"])(num_classes=100)
 
         
-        self.global_model = global_model.cuda()
-        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.global_model = global_model.to(self.device)
         return True
 
     def _resume_model(self):

@@ -49,7 +49,7 @@ class MaliciousClient(AbstractClient):
             elif self.params["dataset"].upper() == "CIFAR100":
                 check_model = getattr(models.vgg, self.params["model_type"])(num_classes=100)
         
-        self.check_model = check_model.cuda()
+        self.check_model = check_model.to(self.device)
         return True
 
     def soft_cross_entropy(self, input, target):
@@ -111,7 +111,7 @@ class MaliciousClient(AbstractClient):
         size = 0
         for name, layer in model.named_parameters():
             size += layer.view(-1).shape[0]
-        sum_var = torch.cuda.FloatTensor(size).fill_(0)
+        sum_var = torch.FloatTensor(size).fill_(0).to(self.device)
         size = 0
         for name, layer in model.named_parameters():
             sum_var[size:size + layer.view(-1).shape[0]] = (
@@ -159,7 +159,7 @@ class MaliciousClient(AbstractClient):
 
         for internal_round in range(10):
             for inputs, labels in clean_data:
-                inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
                 output = model(inputs)
                 loss = nn.functional.cross_entropy(output, labels)
                 loss.backward(retain_graph=True)
@@ -173,10 +173,10 @@ class MaliciousClient(AbstractClient):
                     grad_list.append(parms.grad.abs().view(-1))
                     grad_abs_sum_list.append(parms.grad.abs().view(-1).sum().item())
 
-            grad_list = torch.cat(grad_list).cuda()
+            grad_list = torch.cat(grad_list).to(self.device)
             if not isinstance(ratio, list):
                 _, indices = torch.topk(-1 * grad_list, int(len(grad_list)*ratio))
-                mask_flat_all_layer = torch.zeros(len(grad_list)).cuda()
+                mask_flat_all_layer = torch.zeros(len(grad_list)).to(self.device)
                 mask_flat_all_layer[indices] = 1.0
 
             else:
@@ -184,7 +184,7 @@ class MaliciousClient(AbstractClient):
                 right_ratio = ratio[1]
                 _, left_indices = torch.topk(grad_list, int(len(grad_list)*left_ratio))
                 _, right_indices = torch.topk(grad_list, int(len(grad_list)*right_ratio))
-                mask_flat_all_layer = torch.zeros(len(grad_list)).cuda()
+                mask_flat_all_layer = torch.zeros(len(grad_list)).to(self.device)
                 mask_flat_all_layer[right_indices] = 1.0
                 mask_flat_all_layer[left_indices] = 0.0
 
@@ -197,8 +197,8 @@ class MaliciousClient(AbstractClient):
                 if parms.requires_grad:
                     gradients_length = len(parms.grad.abs().view(-1))
 
-                    mask_flat = mask_flat_all_layer[count:count + gradients_length ].cuda()
-                    mask_grad_list.append(mask_flat.reshape(parms.grad.size()).cuda())
+                    mask_flat = mask_flat_all_layer[count:count + gradients_length ].to(self.device)
+                    mask_grad_list.append(mask_flat.reshape(parms.grad.size()).to(self.device))
 
                     count += gradients_length
                     percentage_mask1 = mask_flat.sum().item()/float(gradients_length)*100.0
@@ -235,7 +235,7 @@ class MaliciousClient(AbstractClient):
 
                     mask_flat = torch.zeros(gradients_length)
                     mask_flat[indices.cpu()] = 1.0
-                    mask_grad_list.append(mask_flat.reshape(parms.grad.size()).cuda())
+                    mask_grad_list.append(mask_flat.reshape(parms.grad.size()).to(self.device))
                     percentage_mask1 = mask_flat.sum().item()/float(gradients_length)*100.0
                     percentage_mask_list.append(percentage_mask1)
                     k_layer += 1
@@ -283,8 +283,8 @@ class MaliciousClient(AbstractClient):
                         batch = self._poisoned_batch_injection(batch, poisoned_pattern_choose, evaluation=False, model_id=model_id)
 
                 data, targets = batch
-                data = data.cuda().detach().requires_grad_(False)
-                targets = targets.cuda().detach().requires_grad_(False)
+                data = data.to(self.device).detach().requires_grad_(False)
+                targets = targets.to(self.device).detach().requires_grad_(False)
 
                 output = self.local_model(data)
                 # loss = self.ceriterion(output, targets)
@@ -412,8 +412,8 @@ class MaliciousClient(AbstractClient):
         for batch_id, batch in enumerate(data_iterator):
 
             data, targets = batch
-            data = data.cuda().detach().requires_grad_(False)
-            targets = targets.cuda().detach().requires_grad_(False)
+            data = data.to(self.device).detach().requires_grad_(False)
+            targets = targets.to(self.device).detach().requires_grad_(False)
 
             output = model(data)
             total_loss += self.ceriterion(output, targets, reduction='sum').item() 
@@ -458,8 +458,8 @@ class MaliciousClient(AbstractClient):
                 poisoned_batch = copy.deepcopy(batch)
 
             data, targets = poisoned_batch
-            data = data.cuda().detach().requires_grad_(False)
-            targets = targets.cuda().detach().requires_grad_(False)
+            data = data.to(self.device).detach().requires_grad_(False)
+            targets = targets.to(self.device).detach().requires_grad_(False)
 
             output = model(data)
             total_loss += self.ceriterion(output, targets, reduction='sum').item() 
@@ -467,7 +467,7 @@ class MaliciousClient(AbstractClient):
 
             clean_batch = copy.deepcopy(batch)
             _,clean_targets = clean_batch
-            clean_targets = clean_targets.cuda().detach().requires_grad_(False)
+            clean_targets = clean_targets.to(self.device).detach().requires_grad_(False)
 
             # if batch_id==0 and test_watermarking:
             #     logger.info(f"watermarking preds are:{pred}")
